@@ -1,0 +1,305 @@
+Overview
+
+Test Smart Conseil is a Dockerized data pipeline for scraping, processing, and indexing social media posts related to harassment. The pipeline collects data, performs NLP (Natural Language Processing) tasks such as cleaning and sentiment analysis, and indexes the results into Elasticsearch for analysis and visualization via Kibana. MongoDB is used as the intermediate data store.
+
+The pipeline consists of four main scripts:
+
+
+
+
+
+scrapper.ipynb: A Jupyter notebook that scrapes social media posts and stores them in MongoDB.
+
+
+
+nlp_pipeline.py: Cleans and preprocesses the scraped data, adding a cleaned_text field.
+
+
+
+nlp_processing.py: Performs additional NLP tasks (e.g., sentiment analysis, language detection).
+
+
+
+es_gest.py: Indexes the processed data into Elasticsearch.
+
+Prerequisites
+
+
+
+
+
+Docker: Ensure Docker Desktop is installed and running (Windows, macOS, or Linux).
+
+
+
+Docker Compose: Included with Docker Desktop (version 2.0 or higher recommended).
+
+
+
+Python: The container uses Python 3.10; no local installation is required.
+
+
+
+Hardware: At least 4GB of RAM and 10GB of free disk space for containers and volumes.
+
+Project Structure
+
+test_smart_conseil/
+├── docker-volume/
+│   └── scripts/
+│       ├── scrapper.ipynb
+│       ├── nlp_pipeline.py
+│       ├── nlp_processing.py
+│       ├── es_gest.py
+│       └── run_all.sh
+├── Screenshots/
+├── exports_data/
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
+
+
+
+
+
+docker-volume/scripts/: Contains the pipeline scripts, mapped to /app in the container.
+
+
+
+Screenshots/: Stores screenshots (if used by scrapper.ipynb).
+
+
+
+exports_data/: Stores exported data (if used by scripts).
+
+
+
+Dockerfile: Defines the smartconseil-app container image.
+
+
+
+docker-compose.yml: Defines the services (mongodb, elasticsearch, kibana, smartconseil-app).
+
+Setup Instructions
+
+
+
+
+
+Clone the Repository (if applicable):
+
+git clone <repository-url>
+cd test_smart_conseil
+
+
+
+Prepare the Scripts Directory: Ensure scrapper.ipynb, nlp_pipeline.py, nlp_processing.py, and es_gest.py are in ./docker-volume/scripts/. Create the directory if it doesn’t exist:
+
+mkdir -p ./docker-volume/scripts
+
+
+
+Create run_all.sh: Create the pipeline execution script:
+
+echo -e '#!/bin/bash\njupyter nbconvert --to python --output scrapper.py scrapper.ipynb\npython scrapper.py\npython nlp_pipeline.py\npython nlp_processing.py\npython es_gest.py' > ./docker-volume/scripts/run_all.sh
+docker run --rm -v scripts:/target -v "$(pwd)/docker-volume/scripts:/source" busybox sh -c "cp /source/run_all.sh /target/ && chmod +x /target/run_all.sh"
+
+
+
+Build the Docker Image: Build the smartconseil-app image:
+
+docker compose build --no-cache smartconseil-app
+
+
+
+Start the Services: Start the containers in order to ensure dependencies are ready:
+
+docker compose down
+docker rm -f smartconseil-app kibana elasticsearch mongodb
+docker compose up -d mongodb
+docker compose up -d elasticsearch
+docker compose up -d kibana
+docker compose up -d smartconseil-app
+
+
+
+Verify Setup: Check container status:
+
+docker ps
+
+Ensure mongodb, elasticsearch, and kibana are running and healthy. Note that smartconseil-app may exit after running run_all.sh unless configured to stay running.
+
+Usage
+
+
+
+
+
+Run the Pipeline: The smartconseil-app container executes the pipeline via run_all.sh:
+
+
+
+
+
+scrapper.ipynb: Scrapes posts and stores them in MongoDB (harcelement.posts).
+
+
+
+nlp_pipeline.py: Cleans the data, adding cleaned_text.
+
+
+
+nlp_processing.py: Performs NLP tasks (e.g., sentiment analysis).
+
+
+
+es_gest.py: Indexes the processed data into Elasticsearch (harcelement_posts index).
+
+Check logs for execution details:
+
+docker logs smartconseil-app
+
+
+
+Access MongoDB: Connect to MongoDB to verify data:
+
+docker exec -it mongodb mongosh mongodb://mongodb:27017/harcelement
+db.posts.find({"cleaned_text": {$exists: true}}).count()
+
+
+
+Access Elasticsearch: Verify indexed documents:
+
+docker exec -it smartconseil-app curl http://elasticsearch:9200/harcelement_posts/_count
+
+
+
+Access Kibana: Open Kibana in a browser at http://localhost:5601 to visualize the harcelement_posts index.
+
+Keeping the Container Running
+
+If you need smartconseil-app to stay running for debugging:
+
+
+
+
+
+Edit docker-compose.yml:
+
+command: /bin/bash -c "/app/run_all.sh && tail -f /dev/null"
+
+
+
+Restart the container:
+
+docker compose down
+docker compose up -d smartconseil-app
+
+Troubleshooting
+
+
+
+
+
+No Documents Indexed: If logs show 0 documents à indexer, ensure scrapper.ipynb, nlp_pipeline.py, and nlp_processing.py are populating cleaned_text in harcelement.posts. Check logs:
+
+docker logs smartconseil-app
+
+Manually inspect MongoDB:
+
+docker exec -it mongodb mongosh mongodb://mongodb:27017/harcelement
+db.posts.find().pretty()
+
+
+
+Elasticsearch Connection Issues: If es_gest.py fails to connect, verify connectivity:
+
+docker run --rm -it --network test_smart_conseil_default test_smart_conseil-smartconseil-app curl http://elasticsearch:9200
+
+Check Elasticsearch logs:
+
+docker logs elasticsearch
+
+
+
+Notebook Execution Errors: If scrapper.ipynb fails, test it manually:
+
+docker run --rm -it --network test_smart_conseil_default test_smart_conseil-smartconseil-app bash
+jupyter nbconvert --to python --output scrapper.py scrapper.ipynb
+python scrapper.py
+
+Dependencies
+
+
+
+
+
+Docker Images:
+
+
+
+
+
+mongo:latest
+
+
+
+docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+
+
+
+docker.elastic.co/kibana/kibana:8.13.4
+
+
+
+Custom smartconseil-app (built from python:3.10-slim)
+
+
+
+Python Packages (in smartconseil-app):
+
+
+
+
+
+pymongo
+
+
+
+elasticsearch==8.13.2
+
+
+
+langdetect
+
+
+
+textblob
+
+
+
+spacy
+
+
+
+jupyter
+
+
+
+Additional dependencies for scrapper.ipynb (e.g., requests, beautifulsoup4)
+
+Notes
+
+
+
+
+
+Ensure scrapper.ipynb is configured to store data in the harcelement.posts collection in MongoDB.
+
+
+
+Add any additional dependencies for scrapper.ipynb to the Dockerfile if required.
+
+
+
+The scripts volume persists scripts between container restarts, but mongodb_data and esdata volumes persist database and Elasticsearch data.
