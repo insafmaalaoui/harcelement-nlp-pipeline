@@ -1,97 +1,38 @@
 Overview
 
-Test Smart Conseil is a Dockerized data pipeline for scraping, processing, and indexing social media posts related to harassment. The pipeline collects data, performs NLP (Natural Language Processing) tasks such as cleaning and sentiment analysis, and indexes the results into Elasticsearch for analysis and visualization via Kibana. MongoDB is used as the intermediate data store.
 
 The pipeline consists of four main scripts:
 
-
-
-
-
 scrapper.ipynb: A Jupyter notebook that scrapes social media posts and stores them in MongoDB.
-
-
 
 nlp_pipeline.py: Cleans and preprocesses the scraped data, adding a cleaned_text field.
 
-
-
 nlp_processing.py: Performs additional NLP tasks (e.g., sentiment analysis, language detection).
-
-
 
 es_gest.py: Indexes the processed data into Elasticsearch.
 
 Prerequisites
 
-
-
-
-
 Docker: Ensure Docker Desktop is installed and running (Windows, macOS, or Linux).
 
-
-
 Docker Compose: Included with Docker Desktop (version 2.0 or higher recommended).
-
-
-
 Python: The container uses Python 3.10; no local installation is required.
-
-
-
-Hardware: At least 4GB of RAM and 10GB of free disk space for containers and volumes.
-
-Project Structure
-
-test_smart_conseil/
-├── docker-volume/
-│   └── scripts/
-│       ├── scrapper.ipynb
-│       ├── nlp_pipeline.py
-│       ├── nlp_processing.py
-│       ├── es_gest.py
-│       └── run_all.sh
-├── Screenshots/
-├── exports_data/
-├── Dockerfile
-├── docker-compose.yml
-└── README.md
-
-
-
-
 
 docker-volume/scripts/: Contains the pipeline scripts, mapped to /app in the container.
 
-
-
 Screenshots/: Stores screenshots (if used by scrapper.ipynb).
-
-
 
 exports_data/: Stores exported data (if used by scripts).
 
-
-
 Dockerfile: Defines the smartconseil-app container image.
-
-
-
 docker-compose.yml: Defines the services (mongodb, elasticsearch, kibana, smartconseil-app).
 
 Setup Instructions
-
-
-
-
 
 Clone the Repository (if applicable):
 
 git clone <repository-url>
 cd test_smart_conseil
-
-
 
 Prepare the Scripts Directory: Ensure scrapper.ipynb, nlp_pipeline.py, nlp_processing.py, and es_gest.py are in ./docker-volume/scripts/. Create the directory if it doesn’t exist:
 
@@ -131,27 +72,13 @@ Ensure mongodb, elasticsearch, and kibana are running and healthy. Note that sma
 
 Usage
 
-
-
-
-
 Run the Pipeline: The smartconseil-app container executes the pipeline via run_all.sh:
-
-
-
-
 
 scrapper.ipynb: Scrapes posts and stores them in MongoDB (harcelement.posts).
 
-
-
 nlp_pipeline.py: Cleans the data, adding cleaned_text.
 
-
-
 nlp_processing.py: Performs NLP tasks (e.g., sentiment analysis).
-
-
 
 es_gest.py: Indexes the processed data into Elasticsearch (harcelement_posts index).
 
@@ -159,20 +86,14 @@ Check logs for execution details:
 
 docker logs smartconseil-app
 
-
-
 Access MongoDB: Connect to MongoDB to verify data:
 
 docker exec -it mongodb mongosh mongodb://mongodb:27017/harcelement
 db.posts.find({"cleaned_text": {$exists: true}}).count()
 
-
-
 Access Elasticsearch: Verify indexed documents:
 
 docker exec -it smartconseil-app curl http://elasticsearch:9200/harcelement_posts/_count
-
-
 
 Access Kibana: Open Kibana in a browser at http://localhost:5601 to visualize the harcelement_posts index.
 
