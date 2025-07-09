@@ -26,11 +26,14 @@ RUN pip install \
     requests \
     beautifulsoup4 \
     pandas \
-    uuid  
+    uuid  \
+    uvicorn[standard] \
+    fastapi
 
 # Télécharger les données de TextBlob
 RUN python -m textblob.download_corpora
 RUN python -m spacy download en_core_web_sm --no-cache-dir || { echo "SpaCy model download failed"; exit 1; }
 
 # Point d'entrée (script à exécuter automatiquement)
-CMD ["/app/run_all.sh"]
+CMD bash -c "/app/run_all.sh && uvicorn fastapi_app:app --host 0.0.0.0 --port 8000"
+

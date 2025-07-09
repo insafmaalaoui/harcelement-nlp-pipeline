@@ -50,13 +50,18 @@ services:
       elasticsearch:
         condition: service_healthy
     volumes:
-      - scripts:/app
-      - screenshots:/Screenshots
-      - exports_data:/exports_data
+      - ./scripts:/app
+      - ./screenshots:/Screenshots
+      - ./exports_data:/exports_data
     environment:
       - ES_HOST=http://elasticsearch:9200
       - MONGO_HOST=mongodb:27017
-    command: /bin/bash -c "/app/run_all.sh && tail -f /dev/null"
+    ports:
+      - "8000:8000"
+
+    command: /bin/bash -c "/app/run_all.sh && uvicorn fastapi_app:app --host 0.0.0.0 --port 8000"
+
+
 
 volumes:
   esdata:

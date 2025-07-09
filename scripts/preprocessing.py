@@ -4,6 +4,7 @@ import nltk
 from nltk.corpus import stopwords
 import spacy
 from tqdm import tqdm
+import os
 
 # Télécharger les ressources NLTK au premier lancement
 nltk.download('stopwords')
