@@ -1,4 +1,4 @@
-# 🧠 Smart Conseil NLP Pipeline
+# 🧠 harcelement-nlp-pipeline
 
 A fully Dockerized Natural Language Processing (NLP) pipeline for scraping, cleaning, analyzing, and indexing social media posts using MongoDB, Elasticsearch, and Kibana.
 
